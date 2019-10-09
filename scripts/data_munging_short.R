@@ -23,7 +23,7 @@ library(rgeos)
       County.x == "Queens County" ~ paste(4, tract_short, sep = ""),
       County.x == "Richmond County" ~ paste(5, tract_short, sep ="")
     ))
-  # length(unique(dat$tract_uid))
+  #length(unique(dat$tract_uid))
 
 # shapefile cleaning
   
@@ -37,6 +37,18 @@ library(rgeos)
 # join together to get NTA name in short dataset 
   dat<-left_join(dat, ntaname, by = c("tract_uid" = "uid"))
 
-# write to csv 
-
+# write wide version to csv (with all variables)
 write_csv(dat, "it_nyc_2008_2017_short_nta.csv")
+
+  # convert to long ( with only some variables)
+  dat_long <- select(dat, NAME.x,Census_Tract.x, County.x, State.x,TotalPop_12, TR_Italian_12,pro_2012,
+                   TotalPop_17, TR_Italian_17, pro_2017, tract_short, tract_uid, ntaname)
+
+  # reshape data to work for Tableau
+  dat_long <- data.table::melt(setDT(dat_long),
+     measure.vars = list(c(5,8), c(6,9), c(7,10)), variable.name = "Year", value.name = c("Population", "Italian","Prop"))
+
+  dat_long$Year <- ifelse(dat_long$Year == 1, 2012, 2017)
+
+# write long version to csv
+write_csv(dat_long, "it_nyc_2008_2017_LongData.csv")
